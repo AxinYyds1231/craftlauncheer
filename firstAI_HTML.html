@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Craft Launcheer</title>
+    <style>
+        :root {
+            --primary: #FF4500;       /* 暖橙红 */
+            --primary-hover: #FF5722;
+            --bg-body: #FDFBF9;
+            --bg-sidebar: #F2EFEA;
+            --bg-midbar: #EAE6DF;
+            --bg-card: #FFFFFF;
+            --text-main: #333333;
+            --text-sub: #888888;
+            --border-color: #E0DBD3;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 🟢 左侧主菜单 */
+        .sidebar {
+            width: 200px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            padding: 20px;
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--primary);
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-menu { padding: 10px 0; }
+        
+        .nav-item {
+            padding: 14px 20px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-main);
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover { background-color: rgba(255, 69, 0, 0.05); color: var(--primary); }
+        .nav-item.active {
+            border-left-color: var(--primary);
+            color: var(--primary);
+            font-weight: bold;
+            background-color: rgba(255, 69, 0, 0.08);
+        }
+
+        /* 🔵 右侧主区域容器 */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 页面切换基础类 */
+        .page {
+            display: none; /* 默认隐藏 */
+            width: 100%;
+            height: 100%;
+        }
+        .page.active {
+            display: flex; /* 激活时显示 */
+        }
+
+        /* =========================================
+           页面 1：启动页 (包含中栏和右栏)
+           ========================================= */
+        #page-launch {
+            flex-direction: row;
+        }
+
+        /* 🟡 中间：版本选择列表 */
+        .midbar {
+            width: 220px;
+            background-color: var(--bg-midbar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .midbar-header {
+            padding: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-sub);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .version-list { flex: 1; overflow-y: auto; padding: 10px; }
+
+        .version-item {
+            padding: 12px 15px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .version-item:hover { background-color: rgba(255,255,255,0.6); }
+        .version-item.active {
+            background-color: var(--bg-card);
+            color: var(--primary);
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-color: var(--border-color);
+        }
+
+        /* 🔴 右侧：MC 背景图详情区 */
+        .launch-detail {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-image: url('https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .launch-detail::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%);
+            z-index: 1;
+        }
+
+        .content-layer {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .topbar {
+            height: 70px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 40px;
+            gap: 20px;
+        }
+
+        .hero-version {
+            font-size: 32px;
+            font-weight: 900;
+            color: #FFFFFF;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            margin-right: auto;
+        }
+
+        .account-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.4);
+            padding: 6px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+        .account-info:hover { background: rgba(0,0,0,0.6); }
+
+        .avatar {
+            width: 24px;
+            height: 24px;
+            background-color: #5599FF;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .detail-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .action-text {
+            font-size: 16px;
+            color: #EEEEEE;
+            cursor: pointer;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            transition: color 0.2s;
+        }
+        .action-text:hover { color: var(--primary); }
+
+        .btn-launch {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 50px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
+            transition: all 0.2s;
+        }
+        .btn-launch:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        /* =========================================
+           页面 2：新闻页
+           ========================================= */
+        #page-news {
+            background-color: var(--bg-body);
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 40px;
+        }
+
+        .news-header {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--text-main);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .news-header::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 28px;
+            background-color: var(--primary);
+            border-radius: 4px;
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .news-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(255, 69, 0, 0.15);
+            border-color: rgba(255, 69, 0, 0.3);
+        }
+
+        .news-img {
+            width: 100%;
+            height: 160px;
+            background-color: #DDD;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .news-info {
+            padding: 20px;
+        }
+
+        .news-date {
+            font-size: 12px;
+            color: var(--primary);
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .news-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .news-desc {
+            font-size: 14px;
+            color: var(--text-sub);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 左侧主菜单 -->
+    <div class="sidebar">
+        <div class="logo">Craft Launcheer</div>
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="switchPage('launch', this)">启动</div>
+            <div class="nav-item" onclick="switchPage('news', this)">新闻</div>
+            <div class="nav-item" onclick="switchPage('download', this)">下载</div>
+            <div class="nav-item" onclick="switchPage('settings', this)">设置</div>
+        </div>
+    </div>
+
+    <!-- 右侧主区域 -->
+    <div class="main-wrapper">
+
+        <!-- 页面 1：启动页 (默认显示) -->
+        <div id="page-launch" class="page active">
+            
+            <!-- 中间：版本列表 -->
+            <div class="midbar">
+                <div class="midbar-header">版本选择</div>
+                <div class="version-list">
+                    <div class="version-item active">26.3</div>
+                    <div class="version-item">1.20.4</div>
+                    <div class="version-item">1.20.1 Fabric</div>
+                </div>
+            </div>
+
+            <!-- 右侧：背景与启动 -->
+            <div class="launch-detail">
+                <div class="content-layer">
+                    <div class="topbar">
+                        <!-- 右上角版本名称 -->
+                        <div class="hero-version" id="display-version">26.3</div>
+                        <div class="account-info">
+                            <div class="avatar">A</div>
+                            <span>alex (离线)</span>
+                        </div>
+                    </div>
+                    <div class="detail-area">
+                        <div class="action-bar">
+                            <div class="action-text">版本设置</div>
+                            <button class="btn-launch">启 动</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页面 2：新闻页 -->
+        <div id="page-news" class="page">
+            <div class="news-header">我的世界新闻</div>
+            
+            <div class="news-grid">
+                <!-- 新闻卡片 1 -->
+                <div class="news-card">
+                    <div class="news-img" style="background-image: url('https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=500&q=80');"></div>
+                    <div class="news-info">
+                        <div class="news-date">2024-04-25</div>
+                        <div class="news-title">Minecraft 1.20.5 发布：新增犰狳与狼甲</div>
+                        <div class="news-desc">探索全新的试炼大厅，与微风人战斗，并收集最新的重核来打造无敌的锤子！</div>
+                    </div>
+                </div>
+
+                <!-- 新闻卡片 2 -->
+                <div class="news-card">
+                    <div class="news-img" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&q=80');"></div>
+                    <div class="news-info">
+                        <div class="news-date">2024-04-20</div>
+                        <div class="news-title">Minecraft Live 2024 汇总：回顾所有重磅公告</div>
+                        <div class="news-desc">错过了直播？没关系，这里有关于新生物、新生物群系以及未来更新的所有细节。</div>
+                    </div>
+                </div>
+
+                <!-- 新闻卡片 3 -->
+                <div class="news-card">
+                    <div class="news-img" style="background-image: url('https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=500&q=80');"></div>
+                    <div class="news-info">
+                        <div class="news-date">2024-04-15</div>
+                        <div class="news-title">社区精选：令人叹为观止的 10 个建筑作品</div>
+                        <div class="news-desc">从宏伟的君士坦丁堡到神秘的精灵之森，看看社区玩家们是如何用方块创造奇迹的。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页面 3 & 4：预留占位 -->
+        <div id="page-download" class="page" style="justify-content:center; align-items:center; color: var(--text-sub);">
+            <h1>下载页面开发中...</h1>
+        </div>
+        <div id="page-settings" class="page" style="justify-content:center; align-items:center; color: var(--text-sub);">
+            <h1>设置页面开发中...</h1>
+        </div>
+
+    </div>
+
+    <!-- 简单的页面切换逻辑 -->
+    <script>
+        function switchPage(pageName, element) {
+            // 1. 移除所有导航项的 active 样式
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+            
+            // 2. 给当前点击的项加上 active 样式
+            element.classList.add('active');
+
+            // 3. 隐藏所有页面
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.remove('active'));
+
+            // 4. 显示目标页面
+            const targetPage = document.getElementById('page-' + pageName);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
